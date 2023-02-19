@@ -1,0 +1,227 @@
+---
+title: "Causal HW"
+output:
+  pdf_document: default
+  html_document: default
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 1
+# Causal Inference via Econometrics and Experimentation
+# Rithwik Sivadasan (sivad001) and Mohammed Pahadwala (pahad002)
+
+## R Markdown
+
+
+Loading the Required Packages
+
+```{r}
+library(readxl)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(mltools)
+library(caret)
+library(corrplot)
+library(tidytext)
+library(stringr)
+library(textdata)
+library(gmodels)
+```
+
+Loading the data For Q1
+
+```{r}
+reddit_data <- read.csv('C:/Users/mdphd19/Documents/Carlsons/Fall/Causal/Homework/Assignment 1/data_Q1.csv')
+summary(reddit_data)
+```
+
+## Question 1: 
+
+Platforms use various methods to stimulate user’s content creation. This includes paying users for reviews and providing awards and badges to users. Reddit is one of the largest platforms for creating and sharing content. On Reddit, users can recognize other contributions by providing gold to each other. However, does getting Reddit gold actually increase the receiver’s content generation? 
+
+To find out, researchers gave 905 random users reddit gold. Data is included for a similar number of users in the control group who did not receive gold during the time of the experiment. Import the data and examine:
+
+a)	If the control and treatment groups are similar across tenure, premium_user, and  num_posts_before  metrics.
+
+b)	Does getting reddit gold increase likelihood that the user will post (use the posted metric as the dependent variable and treated as the independent variable)? Use a simple linear model (not a logit) for the analysis.
+
+c)	What sorts of users are more likely to increase their contribution? (use the tenure and the first_timer variables)
+
+d)	Is the SUTVA assumption likely to be violated in the experiment? 
+
+
+#Solution
+
+# a)
+Checking if the treatment and control groups are same across tenure, premium_user, and  num_posts_before  
+
+```{r}
+t.test(tenure~treated,reddit_data)
+t.test(premium_user~treated,reddit_data)
+t.test(num_post_before~treated,reddit_data)
+
+```
+
+We see that the p-value for tenure test is 0.1699, which is well above our threshold of 0.05. Hence, we have enough evidence to say that the treatment and control groups have similar tenures.
+
+We see that the p-value for premium_user test is 0.3377, which is well above our threshold of 0.05. Hence, we have enough evidence to say that the treatment and control groups have similar number of premium users.
+
+We see that the p-value for num_posts_before test is 0.5738, which is well above our threshold of 0.05. Hence, we have enough evidence to say that the treatment and control groups have similar number of posts before this experiment.
+
+# b)
+
+Testing relationship between getting a gold and posting on the 
+```{r}
+lm_q1_1 = lm(posted~treated,reddit_data)
+summary(lm_q1_1)
+```
+
+Yes, getting a reddit gold does incease the likelihood that a user will post. The coefficient from the linear regression model comes out to be 0.0628. This means that the likelihood of the user posting increases by 0.0628 by getting a reddit gold. The results are statistically significant as denoted by the p-value of the coefficient.
+
+
+
+# c)
+
+Checking if tenure of the user or if the user is a first_timer increases the chance of posting.
+```{r}
+lm_q1_2_1 = lm(posted~treated+tenure,reddit_data)
+summary(lm_q1_2_1)
+
+lm_q1_2_2 = lm(posted~treated+first_timer,reddit_data)
+summary(lm_q1_2_2)
+
+```
+From the above models, we can say that if the user is a first timer, it will not increase the chance of contribution. The coefficient gained is less than zero (negative) hence suggesting that if the user is first timer, there is less likelihood of it posting on the platform. 
+We cannot say for sure about tenure as the probability value large and the results are not statistically significant. There is not enough evidence that there is a relationship between tenure and posting on reddit.  
+
+
+# d)
+Considering economic value of getting a reddit gold, you can use some premium features of reddit like /rlounge which is premium only access. Moreover, a reddit gold user can get wide audience by using the features available exclusively for the gold member. Thus, to reach out to a wider audience a user can employ more than one person to maintain the account. The users that are employed by the gold user could be the part of control group thus effecting the activities in the control group. We could say that SUTVA assumption is violated in the experiment. 
+
+
+# Question 2
+
+
+a)Use a t-test to see if there is a statistical difference in the pre-period between schools in the 
+treatment (bal = 1) and control (bal = 0). This will check if randomization has been done 
+correctly. To do this, calculate the average normalized test score(norm) for the pre period (pre = 1) 
+for math (test_type = 0). Is there a statistical difference between students who got the 
+Balsakhi program and did not get the program? Perform the same test for language (test_type = 1)
+
+
+filtering data to pre period for math and language 
+
+
+Loading the data For Q2
+
+```{r}
+data_Q2 <- read.csv('C:/Users/mdphd19/Documents/Carlsons/Fall/Causal/Homework/Assignment 1/data_Q2.csv')
+summary(data_Q2)
+```
+
+``` {r}
+pre_math_data = filter(data_Q2, data_Q2$pre == 1 & data_Q2$test_type == 0)
+
+pre_lang_data = filter(data_Q2, data_Q2$pre == 1 & data_Q2$test_type == 1)
+``` 
+
+running t test on the filtered data sets for Math
+
+```{r}
+t.test(pre_math_data$norm~pre_math_data$bal)
+```
+
+Average norm value for both treatment and control group are more or less similarly divided given norm 
+value ranges between -1.9 and 3.1 and both control and treatment has average norm value of -6.854839e-09
+and -6.825465e-03 respectively implying randomization has been done correctly. The p-value for this test is 0.7327,
+which is well above our threshold of 0.05.We hence have enough evidence to say that the treatment and control groups have
+similar average normalized maths test scores for pre period.
+
+
+```{r}
+t.test(pre_lang_data$norm~pre_lang_data$bal)
+```
+Average norm value for both treatment and control group are more or less similarly divided given norm 
+value ranges between -1.614 and 3.962 and both control  and treatment has average norm value of
+ -1.313364e-08 and    2.451397e-02  respectively .The p-value for this test is 0.2234, which is above 
+our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have 
+similar average normalized language test scores for pre period.
+
+
+b) Calculate the average test scores for the post period (post = 1) for math for treatment and 
+control. Is there a statistical difference between students in the two groups of schools? 
+Use a t-test model to test the increase.  Perform the same analysis for language test scores. 
+
+filtering the data into post period for Math and Language seperately
+
+```{r}
+
+post_math_data = filter(data_Q2, data_Q2$post == 1 & data_Q2$test_type == 0)
+
+post_lang_data = filter(data_Q2, data_Q2$post == 1 & data_Q2$test_type == 1)
+
+```
+
+running t test on the filtered data sets for Math
+```{r}
+t.test(post_math_data$test~post_math_data$bal)
+```
+Average test score value for treatment  group after experiment is 21.4639 and for control it is 
+19.7814. the t test returned a p-value of  6.591e-09, which is lower than the threshold of 0.05. 
+We can hence conclude that there us a difference in the mean test scores for maths between treatment and control groups 
+#post Balsakhi Experiment
+
+```{r}
+t.test(post_lang_data$test~post_lang_data$bal)
+```
+Average test score value for treatment  group after experiment is 22.11557 and for control it is 
+21.09880. the t test returned a p-value of  0.0001624, which is lower than the threshold of 0.05. 
+We can hence conclude that there is a difference in the mean test scores for language between 
+treatment and control groups post Balsakhi Experiment
+
+
+
+#(c)Can you conclude if the Balsakhi program increase test scores in reading and mathematics? 
+
+
+Running a linear model for maths to check if we can conclude that Balsakhi program 
+increased the test scores post experiment .
+```{r}
+summary(lm(test ~ bal, data = post_math_data))
+```
+The value of Coefficient for bal in the above linear model is 1.6880 indicating an increase in
+the test scores for math for the treatment group compared to control group. the P-value 
+from this test is 6.585e-09, which is lower than our threshold of 0.05. Hence we can conclude that
+the Balsakhi program increases the test scores for Mathematics 
+
+
+Running a linear model for language to check if we can conclude that Balsakhi program 
+increased the test scores post experiment 
+
+```{r}
+summary(lm(test ~ bal, data = post_lang_data))
+```
+The value of Coefficient for bal in the above linear model is 1.0168 indicating an increase in
+the test scores for language for the treatment group compared to control group. the P-value 
+from this test is 0.0001637, which is lower than our threshold of 0.05. Hence we can conclude that
+the Balsakhi program increases the test scores for languages 
+
+#(d)Is the SUTVA assumption likely to be violated in the experiment? 
+
+
+SUTVA assumptions state that:
+1. Treatment can not affect behavior of control group. 
+2. External factors do not affect the behavior of treatment or control group.
+In this experiment, it can be violated if in case students in the treatment group interacts with students from 
+the control group, i.e maybe tutoring them
+Additionally, the test score of students in both the treatment and control
+groups can be impacted due to external factors, such as intervention from parents and teachers or 
+students cheating in the exams 
+
+
+

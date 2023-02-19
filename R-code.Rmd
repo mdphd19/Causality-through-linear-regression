@@ -1,0 +1,231 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 1
+## Causal Inference via Econometrics and Experimentation (MSBA 6441)
+### Addit Anwar (ID: 5825003) and Shubham Garg (ID: 5815915)
+
+This document presents the solution for Homework 1 rendered by Addit Anwar (ID: 5825003) and Shubham Garg (ID: 5815915) for MSBA course in Causal Inference via Econometrics and Experimentation (6441).
+
+We start by importing relevant libraries, required for our analysis.
+
+```{r}
+library(dplyr)
+library(readr)
+```
+
+## Question 1: 
+
+Platforms use various methods to stimulate user’s content creation. This includes paying users for reviews and providing awards and badges to users. Reddit is one of the largest platforms for creating and sharing content. On Reddit, users can recognize other contributions by providing gold to each other. However, does getting Reddit gold actually increase the receiver’s content generation? 
+
+To find out, researchers gave 905 random users reddit gold. Data is included for a similar number of users in the control group who did not receive gold during the time of the experiment. Import the data and examine:
+
+a)	If the control and treatment groups are similar across tenure, premium_user, and  num_posts_before  metrics.
+
+b)	Does getting reddit gold increase likelihood that the user will post (use the posted metric as the dependent variable and treated as the independent variable)? Use a simple linear model (not a logit) for the analysis.
+
+c)	What sorts of users are more likely to increase their contribution? (use the tenure and the first_timer variables)
+
+d)	Is the SUTVA assumption likely to be violated in the experiment? 
+
+
+### Solution:
+
+To solve the above, we start by loading data related to reddit users who were part of a treatment or control group of an experiment. The treatment group of this experiment is 905 random users who were given reddit god, and the control group is other set of 905 random users who were not given reddit gold. 
+
+```{r}
+reddit_users = read_csv('data_Q1.csv')
+head(reddit_users)
+```
+
+### Answer 1.1:
+
+For this question, we try looking at the similarities between treatment and control groups on the basis of tenure, premium_user, and  num_posts_before metrics. We do this using a t test to check if the means are same for these metrics across the treatment and control groups.
+
+1. Checking for tenure
+
+```{r}
+t.test(tenure ~ treated, data = reddit_users)
+```
+
+We see that the p-value for this test is 0.1699, which is well above our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have similar tenures.
+
+2. Checking for premium_user
+
+```{r}
+t.test(premium_user ~ treated, data = reddit_users)
+```
+
+We see that the p-value for this test is 0.3377, which is well above our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have similar number of premium users.
+
+3. Checking for num_posts_before
+
+```{r}
+t.test(num_post_before ~ treated, data = reddit_users)
+```
+
+We see that the p-value for this test is 0.5738, which is well above our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have similar number of posts before this experiment.
+
+### Answer 1.2:
+
+Below is the code for implementing a simple linear model to check if getting reddit gold increase the likelihood that a user will post. We then use the summary function to get information about this model.
+
+```{r}
+summary(lm(posted ~ treated, data = reddit_users))
+```
+
+The p-value for the coefficient for treat is 0.0064, which is less than our threshold of 0.05. Hence, we can say that the treatment does have an impact on number of posts of a reddit user. More specifically, the average number of posts increases by 0.06298 when user is given reddit gold.
+
+### Answer 1.3:
+
+We now look at the interacting relationships, if any, between users who were in the treatment group and the tenure of these users. We then look at similar relationships between treatment group and if the users are first time users or not. 
+
+1. Interaction between treatment and tenure
+
+```{r}
+summary(lm(posted ~ treated * tenure, data = reddit_users))
+```
+
+The p-value for the interaction term treated:tenure is 0.06174, which is above our threshold of 0.05. Hence, we can say that it is not statistically significant, and the tenure probably has no impact on the number of posts from a user who has been given reddit gold.
+
+2. Interaction between treatment and first users
+
+```{r}
+summary(lm(posted ~ treated * first_timer, data = reddit_users))
+```
+
+The p-value for the interaction term treated:tenure is 0.0182, which is above our threshold of 0.05. Hence, we can say that it is statistically significant, and the number of posts from a user who has been given reddit gold and is a first time user is more than a user who is not.
+
+### Answer 1.4:
+
+SUTVA assumptions state that 
+  1. Treatment can not affect behavior of control group. 
+  2. External factors do not affect the behaviour of treatment or control group.
+In this experiment, it may be violated in case of a single person having multiple accounts, and one of the accounts is in the treatment group and the other account is in the control group. This would cause a violaion, as the user might completely stop using the control group account.
+
+
+## Question 2: 
+
+In 2019, Esther Duflo and Abhijeet Banerjee won the Nobel Prize in Economics for their research on experiments on education and poverty. In one of their experiments, they aimed to increase the academic performance of children in public schools in Vadodara (a town in India). 
+
+Duflo and her co-authors examined the impact of the Balsakhi program. In the program, the weakest academic students in Grade 3 were pulled out of their classroom and provided with supplementary classes, during school hours, provided by a Balsakhi, a young woman from the community who would work with the children on basic skills. Schools that did not receive the program formed the comparison group. 
+
+Data is provided for the period prior to the introduction of Balsakhis. This is known as the pre-period. Data is provided for math and language tests. 
+
+Using the data provided:
+
+a)	Use a t-test to see if there is a statistical difference in the pre-period between schools in the treatment (bal = 1) and control (bal = 0). This will check if randomization has been done correctly. To do this, calculate the average normalized test score(norm) for the pre period (pre = 1) for math (test_type = 0). Is there a statistical difference between students who got the Balsakhi program and did not get the program? Perform the same test for language (test_type = 1). 
+
+b)	Calculate the average test scores for the post period (post = 1) for math for treatment and control. Is there a statistical difference between students in the two groups of schools? Use a t-test model to test the increase.  Perform the same analysis for language test scores. 
+
+c)	Can you conclude if the Balsakhi program increase test scores in reading and mathematics? 
+
+d)	Is the SUTVA assumption violated in the example? 
+
+### Solution:
+
+We first start by loading data to analyze the same.
+
+```{r}
+balsakhi = read_csv('data_Q2.csv')
+balsakhi$test_type = factor(balsakhi$test_type)
+head(balsakhi)
+```
+
+### Answer 2.1: 
+
+We need to check if our treatment and control groups differ before the experiment. We do this for the pre period (pre = 1) and two subjects: math (test_type = 0) and language (test_type = 1). We see if the means for the normalized test score for treatment and control group.
+
+1. We first check the average normalized test score for maths for the pre period for the entire data and then for treatment and control groups. 
+
+```{r}
+
+balsakhi_pre_math = balsakhi %>% filter(pre == 1 & test_type == 0)
+mean(balsakhi_pre_math$norm)
+t.test(norm ~ bal, data = balsakhi_pre_math)
+
+```
+
+The average normalized test score for the pre period for maths is -0.003339783. 
+
+We then do a t test to check if this value differs across the treatment and control group. The p-value for this test is 0.7327, which is well above our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have similar average normalized maths test scores for pre period.
+
+
+2. We do a similar analysis for language scores. 
+
+```{r}
+
+balsakhi_pre_lang = balsakhi %>% filter(pre == 1 & test_type == 1)
+mean(balsakhi_pre_lang$norm)
+t.test(norm ~ bal, data = balsakhi_pre_lang)
+```
+
+The average normalized test score for the pre period for math is 0.01199497. 
+
+We then do a t test to check if this value differs across the treatment and control group. The p-value for this test is 0.2234, which is above our threshold of 0.05. We hence have enough evidence to say that the treatment and control groups have similar average normalized language test scores for pre period.
+
+
+### Answer 2.2: 
+
+We now need to check if our treatment and control groups differ after the experiment. We do this for the post period (pre = 1) and two subjects: math (test_type = 0) and language (test_type = 1). We see if the means for the test scores for treatment and control groups.
+
+1. We check the average test scores for maths for the post period for the treatment and control groups. 
+
+```{r}
+
+balsakhi_post_math = balsakhi %>% filter(post == 1 & test_type == 0)
+t.test(test ~ bal, data = balsakhi_post_math)
+
+```
+
+The average maths test score for the treatment group post the experiment is 21.46939, and for the control group is 19.78144. The t test to check the difference in means in the test scores for maths for the post period has the p-value of 6.591e-09, which is much lower than the threshold of 0.05. We can hence conclude that there is a difference between the mean test scores for maths for treatment and control groups post the balsakhi experiment.
+
+2. We then do a similar analysis for the language scores.
+
+```{r}
+
+balsakhi_post_lang = balsakhi %>% filter(post == 1 & test_type == 1)
+t.test(test ~ bal, data = balsakhi_post_lang)
+
+```
+
+The average language test score for the treatment group post the experiment is 22.11557, and for the control group is 21.09880 The t test to check the difference in means in the test scores for language for the post period has the p-value of 0.0001624, which is much lower than the threshold of 0.05. We can hence conclude that there is a difference between the mean test scores for language for treatment and control groups post the balsakhi experiment.
+
+### Answer 2.3:
+
+We now implement a linear model for maths to check if we can conclude if the Balsakhi program increase test scores for mathematics and language.
+
+1. Linear model for mathematics
+
+```{r}
+
+summary(lm(test ~ bal, data = balsakhi_post_math))
+
+```
+
+The value for the coefficient for bal in our linear model is 1.6880, which shows the increase in the test scores for maths for the treatment group, as compared to the control group. The p-value for this test is 6.585e-09, which is lower than our threshold for 0.05. Hence, we can conclude that the Balsakhi program increases that test scores for mathematics.
+
+1. Linear model for language
+
+```{r}
+
+summary(lm(test ~ bal, data = balsakhi_post_lang))
+
+```
+
+The value for the coefficient for bal in our linear model is 1.0168, which shows the increase in the test scores for language for the treatment group, as compared to the control group. The p-value for this test is 0.0001637, which is lower than our threshold for 0.05. Hence, we can conclude that the Balsakhi program increases that test scores for language as well.
+
+
+### Answer 2.4:
+
+SUTVA assumptions state that:
+  1. Treatment can not affect behavior of control group. 
+  2. External factors do not affect the behaviour of treatment or control group.
+In this experiment, it can be violated if in case a student in the treatment group interacts with another in the control group, and teaches the control student. 
+Additionally, the test score of students in both the treatment and control groups can be impacted due to external factors, such as extra intervention from parents and teachers.
